@@ -6,10 +6,12 @@ from selenium.webdriver.common.keys import Keys
 from time import sleep
 from datetime import datetime
 import csv
+import re
 
 #### CONFIG ####
 HEADLESS = True
 SKILLBRIDGE_URL = "https://skillbridge.osd.mil/locations.htm"
+SKILLBRIDGE_ORG_URL = "https://skillbridge.osd.mil/data/organizationsData.js"
 CSV_NAME = f"{datetime.now().isoformat(timespec='minutes').replace(':', '')}.csv"
 # Slower computers/internet might need to increase this
 LOAD_DRIVER = 5
@@ -80,9 +82,45 @@ def main():
             "MOU Organization","Lat","Long"]
     job_data.insert(0, headers)
 
+    # Getting another URL and then parsing that before writing to CSV
+    driver.get(SKILLBRIDGE_ORG_URL)
+    soup = bs(driver.page_source, features="html.parser")
+    # js file being parsed when loaded in a browser has <pre> tags
+    data = soup.find('pre')
+
+    ############# Added this after the original script to include the organizations ########
+    # Find where the js dict starts
+    start = data.text.find("PROGRAM:")
+    # Reverse search to find the last data point
+    end = len(data.text) - data.text[::-1].find(",}")
+    trimmed_data = data.text[start:end-3].strip()
+    split_data = trimmed_data.split("},\n    {")
+
+    organizations = []
+    for item in split_data:
+        #job = re.split('PROGRAM: |, URL: |, OPPORTUNITY_TYPE: |, DELIVERY_METHOD: |, PROGRAM_DURATION: |, STATES: |, NATIONWIDE: |, ONLINE: |, COHORTS: |, JOB_FAMILY: |, LOCATION_DETAILS_AVAILABLE: ', item)[1:]
+        job = re.split('PROGRAM:|URL:|OPPORTUNITY_TYPE:|DELIVERY_METHOD:|PROGRAM_DURATION:|STATES:|NATIONWIDE:|ONLINE:|COHORTS:|JOB_FAMILY:|LOCATION_DETAILS_AVAILABLE:', item)[1:]
+        program = job[0].strip()[1:-2]
+        url = job[1].strip()[1:-2]
+        op_type = job[2].strip()[1:-2]
+        delivery_method = job[3].strip()[1:-2]
+        duration = job[4].strip()[1:-2]
+        states = job[5].strip()[1:-2]
+        nation_wide = job[6].strip()[1:-2]
+        online = job[7].strip()[1:-2]
+        cohorts = job[8].strip()[1:-2]
+        job_family = job[9].strip()[1:-2]
+        loc_detail_avail = job[10].strip()[1:-2]
+        line = [program,'','','','',duration,url,url,'','',states,delivery_method,'',op_type,'','','',job_family,'','','']
+        #line = f"{program},'','','','',{duration},{url},{url},'','',{states},{delivery_method},'','{op_type}','','','','{job_family}','','',''"
+        organizations.append(line)
+
+    final_job_list = job_data + organizations
+    #######################################################################################
+
     with open(CSV_NAME, 'w', encoding="utf-8", newline='') as file:
         writer = csv.writer(file)
-        writer.writerows(job_data)
+        writer.writerows(final_job_list)
     
     if check_length == total_entries:
         print("Success")
@@ -152,7 +190,40 @@ def getCurrentTable(driver):
             # Add the job to the overall data
             job_data.append(cols_data) 
 
+# This was added to show orgs that don't have specific listings
+def getOrganizations(driver):
+    soup = bs(driver.page_source, features="html.parser")
+    data = soup.find('pre')
+
+    # Find where the js dict starts
+    start = data.text.find("PROGRAM:")
+    # # Reverse search to find the last data point
+    end = len(data.text) - data.text[::-1].find(",}")
+    trimmed_data = data.text[start:end-3].strip()
+    split_data = trimmed_data.split("},\n    {")
+
+    split_jobs = []
+    for item in split_data:
+        #job = re.split('PROGRAM: |, URL: |, OPPORTUNITY_TYPE: |, DELIVERY_METHOD: |, PROGRAM_DURATION: |, STATES: |, NATIONWIDE: |, ONLINE: |, COHORTS: |, JOB_FAMILY: |, LOCATION_DETAILS_AVAILABLE: ', item)[1:]
+        job = re.split('PROGRAM:|URL:|OPPORTUNITY_TYPE:|DELIVERY_METHOD:|PROGRAM_DURATION:|STATES:|NATIONWIDE:|ONLINE:|COHORTS:|JOB_FAMILY:|LOCATION_DETAILS_AVAILABLE:', item)[1:]
+        program = job[0].strip()[1:-2]
+        url = job[1].strip()[1:-2]
+        op_type = job[2].strip()[1:-2]
+        delivery_method = job[3].strip()[1:-2]
+        duration = job[4].strip()[1:-2]
+        states = job[5].strip()[1:-2]
+        nation_wide = job[6].strip()[1:-2]
+        online = job[7].strip()[1:-2]
+        cohorts = job[8].strip()[1:-2]
+        job_family = job[9].strip()[1:-2]
+        loc_detail_avail = job[10].strip()[1:-2]
+        line = [program,'','','','',duration,url,url,'','',states,delivery_method,'',op_type,'','','',job_family,'','','']
+        #line = f"{program},'','','','',{duration},{url},{url},'','',{states},{delivery_method},'','{op_type}','','','','{job_family}','','',''"
+        split_jobs.append(line)
+
+    return split_jobs
+
+
 if __name__ == "__main__":
-    # Could be a better way of doing this, but it works for now
     job_data = []
     main()
