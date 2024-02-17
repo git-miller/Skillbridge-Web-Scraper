@@ -90,16 +90,18 @@ def main():
 
     ############# Added this after the original script to include the organizations ########
     # Find where the js dict starts
-    start = data.text.find("PROGRAM:")
+    start = data.text.find("PROGRAM")
     # Reverse search to find the last data point
     end = len(data.text) - data.text[::-1].find(",}")
     trimmed_data = data.text[start:end-3].strip()
-    split_data = trimmed_data.split("},\n    {")
 
+    split_data = trimmed_data.split("},\n    {")
+    
+    print(split_data[0][:50])
+ 
     organizations = []
     for item in split_data:
-        #job = re.split('PROGRAM: |, URL: |, OPPORTUNITY_TYPE: |, DELIVERY_METHOD: |, PROGRAM_DURATION: |, STATES: |, NATIONWIDE: |, ONLINE: |, COHORTS: |, JOB_FAMILY: |, LOCATION_DETAILS_AVAILABLE: ', item)[1:]
-        job = re.split('PROGRAM:|URL:|OPPORTUNITY_TYPE:|DELIVERY_METHOD:|PROGRAM_DURATION:|STATES:|NATIONWIDE:|ONLINE:|COHORTS:|JOB_FAMILY:|LOCATION_DETAILS_AVAILABLE:', item)[1:]
+        job = re.split('PROGRAM|URL|OPPORTUNITY_TYPE|DELIVERY_METHOD|PROGRAM_DURATION|STATES|NATIONWIDE|ONLINE|COHORTS|JOB_FAMILY|LOCATION_DETAILS_AVAILABLE', item)[1:]
         program = job[0].strip()[1:-2]
         url = job[1].strip()[1:-2]
         op_type = job[2].strip()[1:-2]
@@ -112,7 +114,6 @@ def main():
         job_family = job[9].strip()[1:-2]
         loc_detail_avail = job[10].strip()[1:-2]
         line = [program,'','','','',duration,url,url,'','',states,delivery_method,'',op_type,'','','',job_family,'','','']
-        #line = f"{program},'','','','',{duration},{url},{url},'','',{states},{delivery_method},'','{op_type}','','','','{job_family}','','',''"
         organizations.append(line)
 
     final_job_list = job_data + organizations
@@ -196,7 +197,7 @@ def getOrganizations(driver):
     data = soup.find('pre')
 
     # Find where the js dict starts
-    start = data.text.find("PROGRAM:")
+    start = data.text.find("PROGRAM")
     # # Reverse search to find the last data point
     end = len(data.text) - data.text[::-1].find(",}")
     trimmed_data = data.text[start:end-3].strip()
@@ -204,8 +205,7 @@ def getOrganizations(driver):
 
     split_jobs = []
     for item in split_data:
-        #job = re.split('PROGRAM: |, URL: |, OPPORTUNITY_TYPE: |, DELIVERY_METHOD: |, PROGRAM_DURATION: |, STATES: |, NATIONWIDE: |, ONLINE: |, COHORTS: |, JOB_FAMILY: |, LOCATION_DETAILS_AVAILABLE: ', item)[1:]
-        job = re.split('PROGRAM:|URL:|OPPORTUNITY_TYPE:|DELIVERY_METHOD:|PROGRAM_DURATION:|STATES:|NATIONWIDE:|ONLINE:|COHORTS:|JOB_FAMILY:|LOCATION_DETAILS_AVAILABLE:', item)[1:]
+        job = re.split('PROGRAM|URL|OPPORTUNITY_TYPE|DELIVERY_METHOD|PROGRAM_DURATION|STATES|NATIONWIDE|ONLINE|COHORTS|JOB_FAMILY|LOCATION_DETAILS_AVAILABLE', item)[1:]
         program = job[0].strip()[1:-2]
         url = job[1].strip()[1:-2]
         op_type = job[2].strip()[1:-2]
@@ -218,7 +218,6 @@ def getOrganizations(driver):
         job_family = job[9].strip()[1:-2]
         loc_detail_avail = job[10].strip()[1:-2]
         line = [program,'','','','',duration,url,url,'','',states,delivery_method,'',op_type,'','','',job_family,'','','']
-        #line = f"{program},'','','','',{duration},{url},{url},'','',{states},{delivery_method},'','{op_type}','','','','{job_family}','','',''"
         split_jobs.append(line)
 
     return split_jobs
